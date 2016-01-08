@@ -30,10 +30,9 @@ from pyLibrary.times.durations import HOUR
 
 RESPONSE_CONTENT_TYPE = b"application/json"
 
-
 all_creds = []
 containers = {}
-config=None
+config = None
 
 app = Flask(__name__)
 
@@ -58,7 +57,6 @@ def service(path):
         except Exception, e:
             e = Except.wrap(e)
             raise Log.error("Authentication failed", cause=e)
-
 
         permissions = lookup_user(user)
         if path not in user.resources:
@@ -107,12 +105,10 @@ def submit_data(bucket, permissions, body):
     confirmed_data = convert.value2json(data)
 
     storage = containers.get(bucket)
-    if storage==None:
+    if storage == None:
         storage = containers[bucket] = Storage(bucket=bucket, public=True, settings=config.aws)
     link = storage.add(confirmed_data)
     return link
-
-
 
 
 def lookup_user(sender):
@@ -128,6 +124,7 @@ def lookup_credentials(sender):
 
 seen = {}
 
+
 def seen_nonce(sender_id, nonce, timestamp):
     global seen
     key = '{id}:{nonce}:{ts}'.format(
@@ -137,7 +134,7 @@ def seen_nonce(sender_id, nonce, timestamp):
     )
 
     if Random.int(1000) == 0:
-        old = (Date.now()-HOUR).unix
+        old = (Date.now() - HOUR).unix
         seen = {k: v for k, v in seen.items() if v["timestamp"] >= old}
 
     if seen.get(key):
