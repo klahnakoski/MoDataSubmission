@@ -1,0 +1,8 @@
+{
+	"url": "http://localhost:5000/testing",
+	"hawk": {
+		"id": "kyle@example.com",
+		"key": "secret",
+		"algorithm": "sha256"
+	}
+}
