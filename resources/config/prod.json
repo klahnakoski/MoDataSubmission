@@ -7,7 +7,8 @@
 		"processes": 1
 	},
 	"aws": {
-		"$ref": "file://~/private.json#aws_credentials"
+		"$ref": "file://~/private.json#aws_credentials",
+		"region":"us-west-2"
 	},
 	"users": {"$ref": "file://~/storage_permissions.json"},
 	"debug": {

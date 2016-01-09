@@ -30,6 +30,11 @@ settings = None
 
 
 class TestService(FuzzyTestCase):
+    """
+    PLEASE RUN THE SERVICE LOCALLY, USING --settings==tests/resources/config/server.json
+    BEFORE STARTING TESTS
+    """
+
     def __init__(self, *args, **kwargs):
         global server
         global settings
@@ -111,3 +116,4 @@ class TestService(FuzzyTestCase):
                 continue
             d = convert.json2value(line)
             Log.note("{{data}}", data=d)
+
