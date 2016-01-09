@@ -1,0 +1,4 @@
+flask
+mohawk
+boto
+requests
