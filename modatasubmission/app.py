@@ -43,7 +43,6 @@ def overview(path):
     try:
         request = flask.request
         auth = request.headers['Authorization']
-        user = strings.between(auth, 'id="', '",')
         try:
             receiver = Receiver(
                 lookup_credentials,
@@ -58,7 +57,7 @@ def overview(path):
             e = Except.wrap(e)
             raise Log.error("Authentication failed", cause=e)
 
-        permissions = lookup_user(user)
+        permissions = lookup_user(receiver.parsed_header["id"])
         if path not in listwrap(permissions.resources):
             Log.error("{{user}} not allowed access to {{resource}}", user=permissions.hawk.id, resource=path)
 
