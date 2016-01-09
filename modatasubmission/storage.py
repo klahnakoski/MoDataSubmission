@@ -94,7 +94,7 @@ class Storage(object):
         next_write = Date.now()
 
         while not please_stop:
-            d = self.temp_queue.pop(timeout=MINUTE)
+            d = self.temp_queue.pop()
             if d[UID_PATH] != curr:
                 try:
                     next_write = Date.now() + MINUTE
