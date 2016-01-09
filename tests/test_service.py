@@ -12,13 +12,11 @@ from __future__ import division
 from __future__ import unicode_literals
 
 import requests
-from mohawk import Sender
 
-from modatasubmission import storage
+from modatasubmission import storage, Client
 from pyLibrary import convert, jsons
-from pyLibrary.debugs import constants
 from pyLibrary.debugs.logs import Log
-from pyLibrary.dot import wrap, unwrap
+from pyLibrary.dot import unwrap
 from pyLibrary.maths.randoms import Random
 from pyLibrary.testing.fuzzytestcase import FuzzyTestCase
 
@@ -62,48 +60,23 @@ class TestService(FuzzyTestCase):
 
     def test_request(self):
         # MAKE SOME DATA
-        content = convert.unicode2utf8(convert.value2json({
+        data = {
             "constant": "this is a test",
             "random-data": convert.bytes2base64(Random.bytes(100))
-        }))
+        }
 
-        # Hawk Sender WILL DO THE WORK OF SIGNINGs
-        sender = Sender(
-            unwrap(settings.hawk),
-            settings.url,
-            b"POST",
-            content=content,
-            content_type=CONTENT_TYPE
-        )
-
-        # STANDARD POST
-        response = requests.post(
-            url=settings.url,
-            data=content,
-            headers={
-                'Authorization': sender.request_header,
-                'Content-Type': CONTENT_TYPE
-            }
-        )
-
-        if response.status_code != 200:
-            Log.error("Bad server response\n{{body}}", body=response.text)
-
-        # SERVER SIGNED THE RESPONSE. VERIFY IT
-        sender.accept_response(
-            response.headers['Server-Authorization'],
-            content=response.content,
-            content_type=response.headers['Content-Type']
-        )
-
-        link = wrap(convert.json2value(convert.utf82unicode(response.content))).link
+        client = Client(settings.url, unwrap(settings.hawk)) # unwrap() DUE TO BUG https://github.com/kumar303/mohawk/issues/21
+        link = client.send(data)
         Log.note("Success!  Located at {{link}}", link=link)
-        return link
 
     def test_many_request(self):
+        client = Client(settings.url, unwrap(settings.hawk))  # unwrap() DUE TO BUG https://github.com/kumar303/mohawk/issues/21
         link = None
         for i in range(NUM_TESTS):
-            link = self.test_request()
+            link = client.send({
+                            "constant": "this is a test",
+                            "random-data": convert.bytes2base64(Random.bytes(100))
+                        })
 
         # VERIFY WE HAVE DATA
         response = requests.get(link)
