@@ -1,5 +1,5 @@
 {
-	"url": "http://localhost:5000/testing",
+	"url": "http://localhost:5000/build-metrics-dev",
 	"hawk": {
 		"id": "kyle@example.com",
 		"key": "secret",

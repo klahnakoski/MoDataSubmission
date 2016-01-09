@@ -58,3 +58,4 @@ target/
 /.idea
 /MoDataSubmission.iml
 /pyLibrary/.svn
+/*.txt

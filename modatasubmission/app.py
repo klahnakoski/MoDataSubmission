@@ -19,11 +19,12 @@ from mohawk import Receiver
 from werkzeug.wrappers import Response
 
 from modatasubmission.storage import Storage
-from pyLibrary import convert, jsons, strings
+from pyLibrary import convert, strings
 from pyLibrary.debugs import constants
 from pyLibrary.debugs import startup
 from pyLibrary.debugs.exceptions import Except
 from pyLibrary.debugs.logs import Log
+from pyLibrary.dot import unwrap, listwrap
 from pyLibrary.maths.randoms import Random
 from pyLibrary.times.dates import Date
 from pyLibrary.times.durations import HOUR
@@ -37,9 +38,8 @@ config = None
 app = Flask(__name__)
 
 
-@app.route('/', defaults={'path': ''}, methods=['GET'])
-@app.route('/<path:path>')
-def service(path):
+@app.route('/<path:path>', methods=['POST'])
+def overview(path):
     try:
         request = flask.request
         auth = request.headers['Authorization']
@@ -52,17 +52,17 @@ def service(path):
                 request.method,
                 content=request.data,
                 content_type=request.headers['Content-Type'],
-                nonce=seen_nonce
+                seen_nonce=seen_nonce
             )
         except Exception, e:
             e = Except.wrap(e)
             raise Log.error("Authentication failed", cause=e)
 
         permissions = lookup_user(user)
-        if path not in user.resources:
+        if path not in listwrap(permissions.resources):
             Log.error("{{user}} not allowed access to {{resource}}", user=permissions.hawk.id, resource=path)
 
-        link = submit_data(path, permissions, request.data)
+        link = submit_data(path, permissions, request.json)
 
         response_content = convert.unicode2utf8(convert.value2json({"link": link}))
         receiver.respond(
@@ -81,6 +81,7 @@ def service(path):
 
     except Exception, e:
         e = Except.wrap(e)
+        Log.warning("Error", cause=e)
 
         return Response(
             convert.unicode2utf8(convert.value2json(e)),
@@ -100,14 +101,13 @@ def submit_data(bucket, permissions, body):
             "bucket": bucket,
             "timestamp": Date.now()
         },
-        "data": convert.json2value(body)
+        "data": body
     }
-    confirmed_data = convert.value2json(data)
 
     storage = containers.get(bucket)
     if storage == None:
         storage = containers[bucket] = Storage(bucket=bucket, public=True, settings=config.aws)
-    link = storage.add(confirmed_data)
+    link = storage.add(data)
     return link
 
 
@@ -119,7 +119,7 @@ def lookup_user(sender):
 
 
 def lookup_credentials(sender):
-    return lookup_user(sender).hawk
+    return unwrap(lookup_user(sender).hawk)
 
 
 seen = {}
@@ -153,7 +153,7 @@ def main():
         constants.set(config.constants)
         Log.start(config.debug)
 
-        all_creds = jsons.ref.get("file://resources/config/server/server.json")
+        all_creds = config.users
 
         app.run(**config.flask)
     except Exception, e:
@@ -165,7 +165,7 @@ def main():
 
 
 if __name__ == '__main__':
-    app.run()
+    main()
 
 
 

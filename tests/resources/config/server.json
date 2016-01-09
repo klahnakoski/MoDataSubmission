@@ -7,7 +7,7 @@
 		"processes": 1
 	},
 	"aws": {
-		"$ref": "file://~/private.json#aws"
+		"$ref": "file://~/private.json#aws_credentials"
 	},
 	"users": [
 		{
@@ -17,8 +17,16 @@
 				"algorithm": "sha256"
 			},
 			"resources": [
-				"testing"
+				"build-metrics-dev"
 			]
 		}
-	]
+	],
+	"debug": {
+		"trace": true,
+		"log": [
+			{
+				"log_type": "console"
+			}
+		]
+	}
 }

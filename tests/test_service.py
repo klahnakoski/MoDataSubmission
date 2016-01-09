@@ -19,7 +19,6 @@ from pyLibrary.debugs.logs import Log
 from pyLibrary.dot import wrap, unwrap
 from pyLibrary.maths.randoms import Random
 from pyLibrary.testing.fuzzytestcase import FuzzyTestCase
-from pyLibrary.thread.multiprocess import Process
 
 CONTENT_TYPE = b"application/json"
 
@@ -33,17 +32,22 @@ class TestService(FuzzyTestCase):
         global settings
 
         FuzzyTestCase.__init__(self, *args, **kwargs)
-        if not server:
-            server = Process(
-                "Storage Server",
-                [
-                    "python",
-                    "modatasubmission/app.py"
-                    "--setting=tests/resources/config/server.json"
-                ],
-                env={b"PYTHONPATH": b"."}
-            )
+        if not settings:
             settings = jsons.ref.get("file://tests/resources/config/client.json")
+
+
+
+        # if not server:
+        #     server = Process(
+        #         "Storage Server",
+        #         [
+        #             "python",
+        #             "modatasubmission/app.py"
+        #             "--setting=tests/resources/config/server.json"
+        #         ],
+        #         env={b"PYTHONPATH": b"."}
+        #     )
+        #     Thread.sleep(seconds=10)
 
     @classmethod
     def tearDownClass(cls):
@@ -72,12 +76,27 @@ class TestService(FuzzyTestCase):
             }
         )
 
+        if response.status_code!=200:
+            Log.error("Bad server response\n{{body}}", body=response.text)
+
         sender.accept_response(
             response.headers['Server-Authorization'],
             content=response.content,
             content_type=response.headers['Content-Type']
         )
 
-        link = wrap(response.json).link
-
+        link = wrap(convert.json2value(convert.utf82unicode(response.content))).link
         Log.note("Success!  Located at {{link}}", link=link)
+        return link
+
+    def test_many_request(self):
+        link = None
+        for i in range(100):
+            link = self.test_request()
+
+        # VERIFY WE HAVE DATA
+        response = requests.get(link)
+
+        for line in convert.utf82unicode(response.content).split("\n"):
+            d = convert.json2value(line)
+            Log.note("{{data}}", data=d)

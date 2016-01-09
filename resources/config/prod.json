@@ -6,5 +6,27 @@
 		"threaded": true,
 		"processes": 1
 	},
-	"users": {"$ref": "file://~users.json"}
+	"aws": {
+		"$ref": "file://~/private.json#aws_credentials"
+	},
+	"users": [
+		{
+			"hawk": {
+				"id": "dminor",
+				"key": "secret",
+				"algorithm": "sha256"
+			},
+			"resources": [
+				"build-metrics-dev"
+			]
+		}
+	],
+	"debug": {
+		"trace": true,
+		"log": [
+			{
+				"log_type": "console"
+			}
+		]
+	}
 }

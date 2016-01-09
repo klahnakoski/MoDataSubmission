@@ -571,7 +571,10 @@ class Thread(object):
             return
 
         if seconds != None:
-            time.sleep(seconds)
+            if isinstance(seconds, Duration):
+                time.sleep(seconds.total_seconds)
+            else:
+                time.sleep(seconds)
         elif till != None:
             if isinstance(till, datetime):
                 duration = (till - datetime.utcnow()).total_seconds()
