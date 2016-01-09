@@ -56,10 +56,13 @@ class TestService(FuzzyTestCase):
             server.stop()
 
     def test_request(self):
+        # MAKE SOME DATA
         content = convert.unicode2utf8(convert.value2json({
             "constant": "this is a test",
             "random-data": convert.bytes2base64(Random.bytes(100))
         }))
+
+        # Hawk Sender WILL DO THE WORK OF SIGNINGs
         sender = Sender(
             unwrap(settings.hawk),
             settings.url,
@@ -68,6 +71,7 @@ class TestService(FuzzyTestCase):
             content_type=CONTENT_TYPE
         )
 
+        # STANDARD POST
         response = requests.post(
             url=settings.url,
             data=content,
@@ -77,9 +81,10 @@ class TestService(FuzzyTestCase):
             }
         )
 
-        if response.status_code!=200:
+        if response.status_code != 200:
             Log.error("Bad server response\n{{body}}", body=response.text)
 
+        # SERVER SIGNED THE RESPONSE. VERIFY IT
         sender.accept_response(
             response.headers['Server-Authorization'],
             content=response.content,
