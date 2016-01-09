@@ -14,13 +14,16 @@ from __future__ import unicode_literals
 import requests
 from mohawk import Sender
 
+from modatasubmission import storage
 from pyLibrary import convert, jsons
+from pyLibrary.debugs import constants
 from pyLibrary.debugs.logs import Log
 from pyLibrary.dot import wrap, unwrap
 from pyLibrary.maths.randoms import Random
 from pyLibrary.testing.fuzzytestcase import FuzzyTestCase
 
 CONTENT_TYPE = b"application/json"
+NUM_TESTS = storage.BATCH_SIZE
 
 server = None
 settings = None
@@ -34,8 +37,6 @@ class TestService(FuzzyTestCase):
         FuzzyTestCase.__init__(self, *args, **kwargs)
         if not settings:
             settings = jsons.ref.get("file://tests/resources/config/client.json")
-
-
 
         # if not server:
         #     server = Process(
@@ -91,12 +92,17 @@ class TestService(FuzzyTestCase):
 
     def test_many_request(self):
         link = None
-        for i in range(100):
+        for i in range(NUM_TESTS):
             link = self.test_request()
 
         # VERIFY WE HAVE DATA
         response = requests.get(link)
+        bytes = convert.zip2bytes(response.content)
 
-        for line in convert.utf82unicode(response.content).split("\n"):
+        lines = convert.utf82unicode(bytes).split("\n")
+        Log.note("{{num}} lines", num=len(lines))
+        for line in lines:
+            if not line:
+                continue
             d = convert.json2value(line)
             Log.note("{{data}}", data=d)

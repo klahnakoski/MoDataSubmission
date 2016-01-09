@@ -9,18 +9,7 @@
 	"aws": {
 		"$ref": "file://~/private.json#aws_credentials"
 	},
-	"users": [
-		{
-			"hawk": {
-				"id": "dminor",
-				"key": "secret",
-				"algorithm": "sha256"
-			},
-			"resources": [
-				"build-metrics-dev"
-			]
-		}
-	],
+	"users": {"$ref": "file://~/storage_permissions.json"},
 	"debug": {
 		"trace": true,
 		"log": [
