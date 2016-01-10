@@ -22,7 +22,7 @@ from pyLibrary.queries import qb
 from pyLibrary.strings import expand_template
 from pyLibrary.thread.threads import Thread, Lock
 from pyLibrary.times.dates import Date
-from pyLibrary.times.durations import DAY, MINUTE
+from pyLibrary.times.durations import DAY, MINUTE, ZERO
 
 DEBUG = True
 REFERENCE = Date("1 JAN 2015")
@@ -51,7 +51,28 @@ class Storage(object):
         self.push_to_s3 = Thread.run("pushing to " + bucket, self._worker)
 
     def _figure_out_start_point(self):
-        # FIND SOMETHING FROM TODAY
+        # RECOVER FROM THE QUEUE
+        acc = []
+        while True:
+            d = self.temp_queue.pop(timeout=ZERO)
+            if d:
+                acc.append(d)
+            else:
+                break
+        self.temp_queue.rollback()
+
+        if acc:
+            # WAS IN THE MIDDLE OF A BATCH, FIND count
+            data = acc[-1]
+            today_ = data[UID_PATH].split(".")[0]
+            todays_batch_count = int(data[UID_PATH].split(".")[1])
+            count = todays_batch_count * BATCH_SIZE + data.etl.id + 1
+            if DEBUG:
+                Log.note("Next uid from queue is {{uid}}.{{count}}", count=count%BATCH_SIZE, uid=today_+"."+unicode(todays_batch_count))
+            self.uid = UID(count)
+            return
+
+        # FIND LAST WHOLE SOMETHING FROM TODAY
         today_ = unicode(today())
         todays_keys = self.bucket.keys(prefix=unicode(today_))
         if not todays_keys:
@@ -60,15 +81,13 @@ class Storage(object):
             self.uid = UID()
             return
 
-        max_key = today_ + "." + unicode(qb.sort(int(k.split(".")[1]) for k in todays_keys).last())
+        todays_batch_count = qb.sort(int(k.split(".")[1]) for k in todays_keys).last() + 1
+        max_key = today_ + "." + unicode(todays_batch_count)
 
         # FIND LAST ENTRY IN FILE
-        count = 0
-        for line in self.bucket.read_lines(max_key):
-            count = Math.max(convert.json2value(line).etl.id, count)
         if DEBUG:
-            Log.note("Next uid is {{uid}}.{{count}}", count=count+1, uid=max_key)
-        count += BATCH_SIZE * int(max_key.split(".")[1]) + 1
+            Log.note("Next uid is {{uid}}", uid=max_key)
+        count = todays_batch_count * BATCH_SIZE
         self.uid = UID(count)
 
     def add(self, data):
@@ -86,38 +105,67 @@ class Storage(object):
         data.etl.source.href = link
         data[UID_PATH] = uid
         self.temp_queue.add(data)
-        return link
+        return link, count
 
     def _worker(self, please_stop):
         curr = "0.0"
         acc = []
+        last_count_written = -1
         next_write = Date.now()
 
         while not please_stop:
-            d = self.temp_queue.pop()
-            if d[UID_PATH] != curr:
+            d = self.temp_queue.pop(timeout=MINUTE)
+            if d == None:
+                if not acc:
+                    continue
+                # WRITE THE INCOMPLETE DATA TO S3, BUT NOT TOO OFTEN
+                next_write = Date.now() + MINUTE
                 try:
-                    next_write = Date.now() + MINUTE
-                    if DEBUG:
-                        Log.note("write complete data to s3")
-                    self.bucket.write_lines(curr, (convert.value2json(a) for a in acc))
-                    self.temp_queue.commit()
-                    curr = d[UID_PATH]
-                    acc = []
+                    if last_count_written != len(acc):
+                        if DEBUG:
+                            Log.note("write incomplete data ({{num}} lines) to {{uid}} in S3 next (time = {{next_write}})", uid=curr, next_write=next_write, num=len(acc))
+                        self.bucket.write_lines(curr, (convert.value2json(a) for a in acc))
+                        last_count_written = len(acc)
                 except Exception, e:
-                    self.temp_queue.rollback()
+                    Log.note("Problem with write to S3", cause=e)
+            elif d[UID_PATH] != curr:
+                # WRITE acc TO S3 IF WE ARE MOVING TO A NEW KEY
+                try:
+                    if acc:
+                        if DEBUG:
+                            Log.note("write complete data ({{num}} lines) to {{curr}} in S3", num=len(acc), curr=curr)
+                        self.bucket.write_lines(curr, (convert.value2json(a) for a in acc))
+                        last_count_written = 0
+                    curr = d[UID_PATH]
+                    acc = [d]
+                except Exception, e:
                     Log.warning("Can not store data", cause=e)
                     Thread.sleep(30*MINUTE)
             else:
                 acc.append(d)
                 now = Date.now()
-                if now > next_write:
+
+                if d.etl.id == BATCH_SIZE - 1:
+                    # WRITE THE COMPLETE CONTENTS TO KEY
+                    try:
+                        if DEBUG:
+                            Log.note("batch complete: ({{num}} lines) to {{curr}} in S3", num=len(acc), curr=curr)
+                        self.bucket.write_lines(curr, (convert.value2json(a) for a in acc))
+                        last_count_written = 0
+                        self.temp_queue.commit()
+                        curr = d[UID_PATH]
+                        acc = []
+                    except Exception, e:
+                        Log.warning("Can not store data", cause=e)
+                        Thread.sleep(30*MINUTE)
+                elif now > next_write:
                     # WRITE THE INCOMPLETE DATA TO S3, BUT NOT TOO OFTEN
                     next_write = now + MINUTE
                     try:
                         if DEBUG:
-                            Log.note("write incomplete {{uid}} data to s3 next (time = {{next_write}})", uid=curr, next_write=next_write)
+                            Log.note("write incomplete data ({{num}} lines) to {{uid}} in S3 next (time = {{next_write}})", uid=curr, next_write=next_write, num=len(acc))
                         self.bucket.write_lines(curr, (convert.value2json(a) for a in acc))
+                        last_count_written = len(acc)
                     except Exception, e:
                         Log.note("Problem with write to S3", cause=e)
 
@@ -130,13 +178,15 @@ class UID(object):
 
     def advance(self):
         with self.locker:
-            if self.today != today():
-                self.today = today()
-                self.count = 0
+            try:
+                if self.today != today():
+                    self.today = today()
+                    self.count = 0
 
-            batch = Math.floor(self.count/BATCH_SIZE)
-            self.count += 1
-            return unicode(self.today) + "." + unicode(batch), self.count%BATCH_SIZE
+                batch = Math.floor(self.count/BATCH_SIZE)
+                return unicode(self.today) + "." + unicode(batch), self.count % BATCH_SIZE
+            finally:
+                self.count += 1
 
 
 def today():

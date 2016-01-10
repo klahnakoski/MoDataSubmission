@@ -17,7 +17,7 @@
 				"algorithm": "sha256"
 			},
 			"resources": [
-				"build-metrics-dev"
+				"ekyle-testing"
 			]
 		}
 	],

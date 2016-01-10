@@ -39,11 +39,10 @@ app = Flask(__name__)
 
 
 @app.route('/<path:path>', methods=['POST'])
-def overview(path):
+def store_data(path):
     try:
         request = flask.request
         auth = request.headers['Authorization']
-        user = strings.between(auth, 'id="', '",')
         try:
             receiver = Receiver(
                 lookup_credentials,
@@ -58,13 +57,16 @@ def overview(path):
             e = Except.wrap(e)
             raise Log.error("Authentication failed", cause=e)
 
-        permissions = lookup_user(user)
+        permissions = lookup_user(receiver.parsed_header["id"])
         if path not in listwrap(permissions.resources):
             Log.error("{{user}} not allowed access to {{resource}}", user=permissions.hawk.id, resource=path)
 
-        link = submit_data(path, permissions, request.json)
+        link, id = submit_data(path, permissions, request.json)
 
-        response_content = convert.unicode2utf8(convert.value2json({"link": link}))
+        response_content = convert.unicode2utf8(convert.value2json({
+            "link": link,
+            "etl": {"id": id}
+        }))
         receiver.respond(
             content=response_content,
             content_type=RESPONSE_CONTENT_TYPE
@@ -107,8 +109,7 @@ def submit_data(bucket, permissions, body):
     storage = containers.get(bucket)
     if storage == None:
         storage = containers[bucket] = Storage(bucket=bucket, public=True, settings=config.aws)
-    link = storage.add(data)
-    return link
+    return storage.add(data)
 
 
 def lookup_user(sender):
