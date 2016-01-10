@@ -25,7 +25,7 @@ from pyLibrary.times.dates import Date
 from pyLibrary.times.durations import DAY, MINUTE, ZERO
 
 DEBUG = True
-REFERENCE = Date("1 JAN 2015")
+ZERO_DATE = Date("1 JAN 2015")
 BATCH_SIZE = 100
 LINK_PATTERN = "https://s3-{{region}}.amazonaws.com/{{bucket}}/{{uid}}.json.gz"
 UID_PATH = "etl.source.uid"
@@ -72,7 +72,7 @@ class Storage(object):
             self.uid = UID(count)
             return
 
-        # FIND LAST WHOLE SOMETHING FROM TODAY
+        # FIND LAST WHOLE BATCH FROM TODAY
         today_ = unicode(today())
         todays_keys = self.bucket.keys(prefix=unicode(today_))
         if not todays_keys:
@@ -84,7 +84,6 @@ class Storage(object):
         todays_batch_count = qb.sort(int(k.split(".")[1]) for k in todays_keys).last() + 1
         max_key = today_ + "." + unicode(todays_batch_count)
 
-        # FIND LAST ENTRY IN FILE
         if DEBUG:
             Log.note("Next uid is {{uid}}", uid=max_key)
         count = todays_batch_count * BATCH_SIZE
@@ -190,4 +189,4 @@ class UID(object):
 
 
 def today():
-    return int((Date.today() - REFERENCE).floor(DAY) / DAY)
+    return int((Date.today() - ZERO_DATE).floor(DAY) / DAY)
