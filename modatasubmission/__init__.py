@@ -15,7 +15,7 @@ import json
 import requests
 from mohawk import Sender
 
-CONTENT_TYPE = b"application/json"
+CONTENT_TYPE = b'application/json'
 
 
 class Client(object):
@@ -38,7 +38,7 @@ class Client(object):
     def send(self, value):
         """
         :param json_data: A dict OF DATA TO SEND
-        :return: URL OF WHERE DATA WAS STORED
+        :return: URL OF WHERE DATA WAS STORED, AND etl.id OF RECORD
         """
         content = json.dumps(value)
 
@@ -46,7 +46,7 @@ class Client(object):
         sender = Sender(
             self.hawk,
             self.url,
-            b"POST",
+            b'POST',
             content=content,
             content_type=CONTENT_TYPE
         )
@@ -71,6 +71,6 @@ class Client(object):
             content_type=response.headers['Content-Type']
         )
 
-        link = json.loads(response.content)["link"]
-        return link
+        about = json.loads(response.content)
+        return about['link'], about['etl']['id']
 

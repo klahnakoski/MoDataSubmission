@@ -65,28 +65,23 @@ class TestService(FuzzyTestCase):
             "random-data": convert.bytes2base64(Random.bytes(100))
         }
 
-        client = Client(settings.url, unwrap(settings.hawk)) # unwrap() DUE TO BUG https://github.com/kumar303/mohawk/issues/21
-        link = client.send(data)
-        Log.note("Success!  Located at {{link}}", link=link)
-
-    def test_many_request(self):
         client = Client(settings.url, unwrap(settings.hawk))  # unwrap() DUE TO BUG https://github.com/kumar303/mohawk/issues/21
-        link = None
-        for i in range(NUM_TESTS):
-            link = client.send({
-                            "constant": "this is a test",
-                            "random-data": convert.bytes2base64(Random.bytes(100))
-                        })
+        link, id = client.send(data)
+        Log.note("Success!  Located at {{link}} id={{id}}", link=link, id=id)
 
-        # VERIFY WE HAVE DATA
-        response = requests.get(link)
-        bytes = convert.zip2bytes(response.content)
+        # FILL THE REST OF THE FILE
+        Log.note("Add ing {{num}} more...", num=99-id)
+        for i in range(id + 1, storage.BATCH_SIZE):
+            l, k = client.send(data)
+            if l != link:
+                Log.error("Expecting rest of data to have same link")
 
-        lines = convert.utf82unicode(bytes).split("\n")
-        Log.note("{{num}} lines", num=len(lines))
-        for line in lines:
-            if not line:
-                continue
-            d = convert.json2value(line)
-            Log.note("{{data}}", data=d)
-
+        # TEST LINK HAS DATA
+        content = convert.zip2bytes(requests.get(link).content)
+        for line in convert.utf82unicode(content).split("\n"):
+            data = convert.json2value(line)
+            if data.etl.id == id:
+                Log.note("Data {{id}} found", id=id)
+                break
+        else:
+            Log.error("Expecting to find data at link")
