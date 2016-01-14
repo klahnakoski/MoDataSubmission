@@ -24,11 +24,12 @@ from pyLibrary.debugs import constants
 from pyLibrary.debugs import startup
 from pyLibrary.debugs.exceptions import Except
 from pyLibrary.debugs.logs import Log
-from pyLibrary.dot import unwrap, listwrap
+from pyLibrary.dot import unwrap, listwrap, wrap_leaves, set_default, wrap
 from pyLibrary.maths.randoms import Random
 from pyLibrary.times.dates import Date
 from pyLibrary.times.durations import HOUR
 
+MAX_PUBLIC_DATA_SIZE = 20000
 RESPONSE_CONTENT_TYPE = b"application/json"
 
 all_creds = []
@@ -37,12 +38,18 @@ config = None
 
 app = Flask(__name__)
 
-
 @app.route('/<path:path>', methods=['POST'])
 def store_data(path):
     try:
         request = flask.request
-        auth = request.headers['Authorization']
+        auth = request.headers.get('Authorization')
+
+        if not auth:
+            # USE PATTERN MATCHING AUTH
+            for c in all_creds:
+                if c.path == path:
+                    return store_public_data(path, c)
+
         try:
             receiver = Receiver(
                 lookup_credentials,
@@ -94,7 +101,7 @@ def store_data(path):
         )
 
 
-def submit_data(bucket, permissions, body):
+def submit_data(bucket, permissions, value):
     global containers
     # CONFIRM THIS IS JSON, AND ANNOTATE
     data = {
@@ -103,7 +110,7 @@ def submit_data(bucket, permissions, body):
             "bucket": bucket,
             "timestamp": Date.now()
         },
-        "data": body
+        "data": value
     }
 
     storage = containers.get(bucket)
@@ -143,6 +150,51 @@ def seen_nonce(sender_id, nonce, timestamp):
     else:
         seen[key] = {"timestamp": timestamp}
         return False
+
+
+def store_public_data(path, permissions):
+    """
+    :param path: THE BUCKET TO USE
+    :param permissions: THE DATA PATTERN EXPECTED
+    :return: LINK TO DATA
+    """
+    try:
+        request = flask.request
+
+        if request.content_length > MAX_PUBLIC_DATA_SIZE or len(request.data) > MAX_PUBLIC_DATA_SIZE:
+            Log.error("Not acceptable")
+
+        json_data = wrap(request.json)
+        for k, _ in permissions.pattern.leaves():
+            if not json_data[k]:
+                Log.error("Not acceptable")
+
+        link, id = submit_data(path, permissions, request.json)
+
+        response_content = convert.unicode2utf8(convert.value2json({
+            "link": link,
+            "etl": {"id": id}
+        }))
+
+        return Response(
+            response_content,
+            status=200,
+            headers={
+                "Content-type": RESPONSE_CONTENT_TYPE
+            }
+        )
+
+    except Exception, e:
+        e = Except.wrap(e)
+        Log.warning("Error", cause=e)
+
+        return Response(
+            convert.unicode2utf8(convert.value2json(e)),
+            status=400,
+            headers={
+                "Content-type": "application/json"
+            }
+        )
 
 
 def main():
