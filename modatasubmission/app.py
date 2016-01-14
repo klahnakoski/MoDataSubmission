@@ -83,8 +83,8 @@ def store_data(path):
             response_content,
             status=200,
             headers={
-                'Server-Authorization': receiver.response_header,
-                "Content-type": RESPONSE_CONTENT_TYPE
+                b'Server-Authorization': receiver.response_header,
+                b'content-type': RESPONSE_CONTENT_TYPE
             }
         )
 
@@ -93,10 +93,10 @@ def store_data(path):
         Log.warning("Error", cause=e)
 
         return Response(
-            convert.unicode2utf8(convert.value2json(e)),
+            b"Not Accepted",
             status=400,
             headers={
-                "Content-type": "application/json"
+                b'content-type': "application/json"
             }
         )
 
@@ -180,7 +180,7 @@ def store_public_data(path, permissions):
             response_content,
             status=200,
             headers={
-                "Content-type": RESPONSE_CONTENT_TYPE
+                'content-type': RESPONSE_CONTENT_TYPE
             }
         )
 
@@ -192,7 +192,7 @@ def store_public_data(path, permissions):
             convert.unicode2utf8(convert.value2json(e)),
             status=400,
             headers={
-                "Content-type": "application/json"
+                'content-type': "application/json"
             }
         )
 
