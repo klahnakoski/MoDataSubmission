@@ -113,13 +113,39 @@ class TestService(FuzzyTestCase):
             }
         )
 
-        if response.status_code != 200:
-            raise Exception(response.content)
+        self.assertEqual(response.status_code, 200, "Expecting 200")
 
         about = json.loads(response.content)
         return about['link'], about['etl']['id']
 
-        Log.note("Success!  Located at {{link}} id={{id}}", link=link, id=id)
+        Log.note("Data located at {{link}} id={{id}}", link=link, id=id)
 
 
+    def test_public_request_too_big(self):
+        # MAKE SOME DATA
+        data = {
+            "a": {  # MATCHES SERVER PATTERN
+                "b": "good",
+                "c": [
+                    {"k": "good", "m": 1},
+                    {"k": 2, "m": 2}
+                ]
+            },
+            "constant": "this is a test",
+            "random-data": convert.bytes2base64(Random.bytes(500))
+        }
 
+        content = json.dumps(data)
+
+        def poster():
+            response = requests.post(
+                url=settings.url,
+                data=content,
+                headers={
+                    'Content-Type': CONTENT_TYPE
+                }
+            )
+
+            self.assertEqual(response.status_code, 200, "Expecting 200")
+
+        self.assertRaises(Exception, poster)

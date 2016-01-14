@@ -7,6 +7,7 @@ export PYTHONPATH=.
 export HOME=/home/ec2-user
 cd ~/MoDataSubmission
 git pull origin master
-nohup python27 modatasubmission/app.py --settings=resources/config/prod.json &
 
+
+nohup python27 modatasubmission/app.py --settings=resources/config/prod.json &
 disown -h

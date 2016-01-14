@@ -12,6 +12,7 @@
 	"users": [
 		{
 			"path":"ekyle-testing",
+			"max_size": 400,
 			"pattern": {
 				"a.b": "BAD",
 				"a.c.0.k": "BAD"
