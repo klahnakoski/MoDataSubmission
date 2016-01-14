@@ -11,6 +11,8 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import unicode_literals
 
+import json
+
 import requests
 
 from modatasubmission import storage, Client
@@ -85,3 +87,39 @@ class TestService(FuzzyTestCase):
                 break
         else:
             Log.error("Expecting to find data at link")
+
+
+    def test_public_request(self):
+        # MAKE SOME DATA
+        data = {
+            "a": {  # MATCHES SERVER PATTERN
+                "b": "good",
+                "c": [
+                    {"k": "good", "m": 1},
+                    {"k": 2, "m": 2}
+                ]
+            },
+            "constant": "this is a test",
+            "random-data": convert.bytes2base64(Random.bytes(100))
+        }
+
+        content = json.dumps(data)
+
+        response = requests.post(
+            url=settings.url,
+            data=content,
+            headers={
+                'Content-Type': CONTENT_TYPE
+            }
+        )
+
+        if response.status_code != 200:
+            raise Exception(response.content)
+
+        about = json.loads(response.content)
+        return about['link'], about['etl']['id']
+
+        Log.note("Success!  Located at {{link}} id={{id}}", link=link, id=id)
+
+
+

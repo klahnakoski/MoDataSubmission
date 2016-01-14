@@ -11,6 +11,13 @@
 	},
 	"users": [
 		{
+			"path":"ekyle-testing",
+			"pattern": {
+				"a.b": "BAD",
+				"a.c.0.k": "BAD"
+			}
+		},
+		{
 			"hawk": {
 				"id": "kyle@example.com",
 				"key": "secret",

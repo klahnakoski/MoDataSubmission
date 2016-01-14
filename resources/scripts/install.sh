@@ -1,3 +1,9 @@
+
+#
+# WARNING:  Do not use this script directly.  Think of it as an installation guide.
+#
+
+
 #INSTALL GIT
 sudo yum install -y git-core
 
