@@ -1,5 +1,6 @@
 {
 	"url": "http://localhost:5000/ekyle-testing",
+	"bad_url": "http://localhost:5000/no-bucket",
 	"hawk": {
 		"id": "kyle@example.com",
 		"key": "secret",
