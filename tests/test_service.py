@@ -149,3 +149,13 @@ class TestService(FuzzyTestCase):
             self.assertEqual(response.status_code, 200, "Expecting 200")
 
         self.assertRaises(Exception, poster)
+
+    def test_missing_auth(self):
+        # MAKE SOME DATA
+        data = {
+            "constant": "this is a test",
+            "random-data": convert.bytes2base64(Random.bytes(100))
+        }
+
+        response = requests.post(settings.bad_url, data=convert.unicode2utf8(convert.value2json(data)))
+        self.assertEqual(response.status_code, 400)

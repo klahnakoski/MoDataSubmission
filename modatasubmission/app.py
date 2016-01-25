@@ -49,6 +49,7 @@ def store_data(path):
             for c in all_creds:
                 if c.path == path:
                     return store_public_data(path, c)
+            Log.error("No authentication provided")
 
         try:
             receiver = Receiver(
@@ -62,7 +63,13 @@ def store_data(path):
             )
         except Exception, e:
             e = Except.wrap(e)
-            raise Log.error("Authentication failed", cause=e)
+            raise Log.error(
+                "Authentication failed.  path={{path}} data.length={{length}}\n{{auth|indent}}",
+                path=path,
+                length=len(request.data),
+                auth=auth,
+                cause=e
+            )
 
         permissions = lookup_user(receiver.parsed_header["id"])
         if path not in listwrap(permissions.resources):
