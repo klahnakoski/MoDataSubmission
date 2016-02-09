@@ -101,7 +101,7 @@ def store_data(path):
 
         return Response(
             RESPONSE_400,
-            status=400,
+            status=403,
             headers={
                 b'content-type': "application/json"
             }
@@ -197,7 +197,7 @@ def store_public_data(path, permissions):
 
         return Response(
             RESPONSE_400,
-            status=400,
+            status=403,
             headers={
                 'content-type': "application/json"
             }
@@ -217,7 +217,7 @@ def main():
 
         app.run(**config.flask)
     except Exception, e:
-        Log.error("Serious problem with ActiveData service!  Shutdown completed!", cause=e)
+        Log.error("Serious problem with MoDataSubmission service!  Shutdown completed!", cause=e)
     finally:
         Log.stop()
 

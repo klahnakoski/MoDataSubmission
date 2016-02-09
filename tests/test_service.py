@@ -158,4 +158,4 @@ class TestService(FuzzyTestCase):
         }
 
         response = requests.post(settings.bad_url, data=convert.unicode2utf8(convert.value2json(data)))
-        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.status_code, 403)
