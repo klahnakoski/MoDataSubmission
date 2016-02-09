@@ -31,9 +31,11 @@ link, id = Client(settings.url, unwrap(settings.hawk)).send(data)
 Log.note("Success!  Located at {{link}} id={{id}}", link=link, id=id)
 
 
-data = settings.example
+data = convert.unicode2utf8(convert.value2json(settings.example))
 
 response = requests.post(settings.url, data=data)
-if response.status_code == 200:
-    details = convert.json2value(convert.utf82unicode(response.content))
-    Log.note("Success!  Located at {{link}} id={{id}}", link=link, id=id)
+if response.status_code != 200:
+    Log.error("Expecting a pass")
+
+details = convert.json2value(convert.utf82unicode(response.content))
+Log.note("Success!  Located at {{link}} id={{id}}", link=link, id=id)
