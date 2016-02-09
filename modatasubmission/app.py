@@ -29,7 +29,7 @@ from pyLibrary.maths.randoms import Random
 from pyLibrary.times.dates import Date
 from pyLibrary.times.durations import HOUR
 
-RESPONSE_400 = b"Not Accepted"
+RESPONSE_4XX = b"Not Accepted"
 RESPONSE_CONTENT_TYPE = b"application/json"
 
 all_creds = []
@@ -100,10 +100,10 @@ def store_data(path):
         Log.warning("Error", cause=e)
 
         return Response(
-            RESPONSE_400,
+            RESPONSE_4XX,
             status=403,
             headers={
-                b'content-type': "application/json"
+                b'content-type': "text/plain"
             }
         )
 
@@ -169,12 +169,12 @@ def store_public_data(path, permissions):
         request = flask.request
 
         if request.content_length > permissions.max_size or len(request.data) > permissions.max_size:
-            Log.error("Not acceptable")
+            Log.error("Not acceptable, too big")
 
         json_data = wrap(request.json)
         for k, _ in permissions.pattern.leaves():
             if not json_data[k]:
-                Log.error("Not acceptable")
+                Log.error("Not acceptable\n{{data|json}}", data=json_data)
 
         link, id = submit_data(path, permissions, request.json)
 
@@ -196,10 +196,10 @@ def store_public_data(path, permissions):
         Log.warning("Error", cause=e)
 
         return Response(
-            RESPONSE_400,
+            RESPONSE_4XX,
             status=403,
             headers={
-                'content-type': "application/json"
+                'content-type': "text/plain"
             }
         )
 
