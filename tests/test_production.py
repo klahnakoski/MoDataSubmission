@@ -11,19 +11,29 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import unicode_literals
 
-from modatasubmission import Client
+import requests
+
 from pyLibrary import convert, jsons
 from pyLibrary.debugs.logs import Log
 from pyLibrary.dot import unwrap
 from pyLibrary.maths.randoms import Random
+from modatasubmission import Client
 
-settings = jsons.ref.get("file://~/prod_client.json")
+
+settings = jsons.ref.get("file://~/MoDataSubmissionClient.json")
+
 
 data={
     "constant": "this is a test",
     "random-data": convert.bytes2base64(Random.bytes(100))
 }
-
 link, id = Client(settings.url, unwrap(settings.hawk)).send(data)
-
 Log.note("Success!  Located at {{link}} id={{id}}", link=link, id=id)
+
+
+data = settings.example
+
+response = requests.post(settings.url, data=data)
+if response.status_code == 200:
+    details = convert.json2value(convert.utf82unicode(response.content))
+    Log.note("Success!  Located at {{link}} id={{id}}", link=link, id=id)
