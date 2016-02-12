@@ -49,7 +49,11 @@ def store_data(path):
             for c in all_creds:
                 if c.path == path:
                     return store_public_data(path, c)
-            Log.error("No authentication provided")
+            raise Log.error(
+                "No authentication provided.  path={{path}} data.length={{length}}",
+                path=path,
+                length=len(request.data),
+            )
 
         try:
             receiver = Receiver(
