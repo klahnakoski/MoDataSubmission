@@ -33,9 +33,15 @@ Log.note("Success!  Located at {{link}} id={{id}}", link=link, id=id)
 
 data = convert.unicode2utf8(convert.value2json(settings.example))
 
-response = requests.post(settings.url, data=data)
+response = requests.post(
+    settings.url,
+    data=data,
+    headers={
+        'Content-Type': b'application/json'
+    }
+)
 if response.status_code != 200:
     Log.error("Expecting a pass")
 
 details = convert.json2value(convert.utf82unicode(response.content))
-Log.note("Success!  Located at {{link}} id={{id}}", link=link, id=id)
+Log.note("Success!  Located at {{link}} id={{id}}", link=details.link, id=details.etl.id)
