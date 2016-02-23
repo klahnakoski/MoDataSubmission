@@ -126,7 +126,7 @@ def submit_data(bucket, permissions, value):
 
     storage = containers.get(bucket)
     if storage == None:
-        storage = containers[bucket] = Storage(bucket=bucket, public=True, settings=config.aws)
+        storage = containers[bucket] = Storage(bucket=bucket, settings=config.aws)
     return storage.add(data)
 
 
