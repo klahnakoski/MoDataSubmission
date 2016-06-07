@@ -47,7 +47,6 @@ class Storage(object):
         self.bucket = s3.Bucket(settings=settings)
         self.temp_queue = PersistentQueue(bucket + "_queue.txt")
         self._figure_out_start_point()
-
         self.push_to_s3 = Thread.run("pushing to " + bucket, self._worker)
 
     def _figure_out_start_point(self):
@@ -68,7 +67,11 @@ class Storage(object):
             todays_batch_count = int(data[UID_PATH].split(".")[1])
             count = todays_batch_count * BATCH_SIZE + data.etl.id + 1
             if DEBUG:
-                Log.note("Next uid from queue is {{uid}}.{{count}}", count=count%BATCH_SIZE, uid=today_+"."+unicode(todays_batch_count))
+                Log.note(
+                    "Next uid from queue is {{uid}}.{{count}}",
+                    count=count % BATCH_SIZE,
+                    uid=today_ + "." + unicode(todays_batch_count)
+                )
             self.uid = UID(count)
             return
 
@@ -144,7 +147,7 @@ class Storage(object):
                 acc.append(d)
                 now = Date.now()
 
-                if d.etl.id == BATCH_SIZE - 1:
+                if d.etl.id >= BATCH_SIZE - 1:
                     # WRITE THE COMPLETE CONTENTS TO KEY
                     try:
                         if DEBUG:

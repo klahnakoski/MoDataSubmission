@@ -25,6 +25,7 @@ _convert = None
 _Log = None
 _Except = None
 
+
 def _late_import():
     global _convert
     global _Log
@@ -70,8 +71,11 @@ def expand(doc, doc_url):
     ASSUMING YOU ALREADY PULED THE doc FROM doc_url, YOU CAN STILL USE THE
     EXPANDING FEATURE
     """
+    if not _Log:
+        _late_import()
+
     if doc_url.find("://") == -1:
-        _Log.error("{{url}} must have a prototcol (eg http://) declared",  url= doc_url)
+        _Log.error("{{url}} must have a prototcol (eg http://) declared", url=doc_url)
 
     phase1 = _replace_ref(doc, URL(doc_url))  # BLANK URL ONLY WORKS IF url IS ABSOLUTE
     phase2 = _replace_locals(phase1, [phase1])
@@ -199,7 +203,17 @@ def get_file(ref, url):
         ref.path = home_path + ref.path[1::]
     elif not ref.path.startswith("/"):
         # CONVERT RELATIVE TO ABSOLUTE
-        ref.path = "/".join(url.path.rstrip("/").split("/")[:-1]) + "/" + ref.path
+        if ref.path[0] == ".":
+            num_dot = 1
+            while ref.path[num_dot] == ".":
+                num_dot += 1
+
+            parent = url.path.rstrip("/").split("/")[:-num_dot]
+            ref.path = "/".join(parent) + ref.path[num_dot:]
+        else:
+            parent = url.path.rstrip("/").split("/")[:-1]
+            ref.path = "/".join(parent) + "/" + ref.path
+
 
     path = ref.path if os.sep != "\\" else ref.path[1::].replace("/", "\\")
 

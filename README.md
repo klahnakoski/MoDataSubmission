@@ -1,7 +1,9 @@
 MoDataSubmission
 ================
 
-A service that accepts HTTP POST requests of JSON, stores them in S3, and returns a link to its location.  Requests are authenticated using [Hawk](https://github.com/hueniverse/hawk).
+A service that accepts HTTP POST requests of JSON, stores them in S3, and 
+returns a link to its location.  Requests are authenticated using 
+[Hawk](https://github.com/hueniverse/hawk).
 
 
 Requirements
@@ -14,12 +16,14 @@ Requirements
 Installation
 ------------
 
-There is an installation script in [resources/scripts/install.sh](https://github.com/klahnakoski/MoDataSubmission/blob/dev/resources/scripts/install.sh) which can be used as a guide for installing the server.
+There is an installation script in [resources/scripts/install.sh](https://github.com/klahnakoski/MoDataSubmission/blob/dev/resources/scripts/install.sh) 
+which can be used as a guide for installing the server.
 
 Setup
 -----
 
-The server requires a configuration file.  An example configuration file is at [tests/resources/config/server.json](https://github.com/klahnakoski/MoDataSubmission/blob/dev/tests/resources/config/server.json)
+The server requires a configuration file.  An example configuration file is at 
+[tests/resources/config/server.json](https://github.com/klahnakoski/MoDataSubmission/blob/dev/tests/resources/config/server.json)
 
 ```javascript
 	{

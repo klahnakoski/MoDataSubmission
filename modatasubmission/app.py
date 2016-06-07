@@ -52,7 +52,7 @@ def store_data(path):
             raise Log.error(
                 "No authentication provided.  path={{path}} data.length={{length}}",
                 path=path,
-                length=len(request.data),
+                length=len(request.get_data()),
             )
 
         try:
@@ -61,7 +61,7 @@ def store_data(path):
                 auth,
                 request.url,
                 request.method,
-                content=request.data,
+                content=request.get_data(),
                 content_type=request.headers['Content-Type'],
                 seen_nonce=seen_nonce
             )
@@ -70,7 +70,7 @@ def store_data(path):
             raise Log.error(
                 "Authentication failed.  path={{path}} data.length={{length}}\n{{auth|indent}}",
                 path=path,
-                length=len(request.data),
+                length=len(request.get_data()),
                 auth=auth,
                 cause=e
             )
@@ -172,7 +172,7 @@ def store_public_data(path, permissions):
     try:
         request = flask.request
 
-        if request.content_length > permissions.max_size or len(request.data) > permissions.max_size:
+        if request.content_length > permissions.max_size or len(request.get_data()) > permissions.max_size:
             Log.error("Not acceptable, too big")
 
         json_data = wrap(request.json)
