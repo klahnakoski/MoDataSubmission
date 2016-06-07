@@ -18,7 +18,7 @@ from pyLibrary.debugs.logs import Log
 from pyLibrary.dot import wrap
 from pyLibrary.maths import Math
 from pyLibrary.meta import use_settings
-from pyLibrary.queries import qb
+from pyLibrary.queries import jx
 from pyLibrary.strings import expand_template
 from pyLibrary.thread.threads import Thread, Lock
 from pyLibrary.times.dates import Date
@@ -84,7 +84,7 @@ class Storage(object):
             self.uid = UID()
             return
 
-        todays_batch_count = qb.sort(int(k.split(".")[1]) for k in todays_keys).last() + 1
+        todays_batch_count = jx.sort(int(k.split(".")[1]) for k in todays_keys).last() + 1
         max_key = today_ + "." + unicode(todays_batch_count)
 
         if DEBUG:
