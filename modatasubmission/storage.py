@@ -45,6 +45,7 @@ class Storage(object):
     ):
         self.uid = None
         self.bucket = s3.Bucket(settings=settings)
+        Log.alert("Using {{bucket}} for S3 storage", bucket=self.bucket.name)
         self.temp_queue = PersistentQueue(bucket + "_queue.txt")
         self._figure_out_start_point()
         self.push_to_s3 = Thread.run("pushing to " + bucket, self._worker)

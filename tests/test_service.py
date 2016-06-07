@@ -79,7 +79,8 @@ class TestService(FuzzyTestCase):
                 Log.error("Expecting rest of data to have same link")
 
         # TEST LINK HAS DATA
-        content = convert.zip2bytes(requests.get(link).content)
+        raw_content = requests.get(link).content
+        content = convert.zip2bytes(raw_content)
         for line in convert.utf82unicode(content).split("\n"):
             data = convert.json2value(line)
             if data.etl.id == id:
